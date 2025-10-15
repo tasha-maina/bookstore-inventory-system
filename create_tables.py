@@ -1,3 +1,4 @@
+print("▶ Starting table creation...")
 from db import Base, engine
 from models.author import Author
 from models.book import Book
