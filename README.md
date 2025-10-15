@@ -92,4 +92,4 @@ Check your Beekeeper → All tables populated 🎉
 
 👩‍💻 Author
 
-Created by Natasha Banks
+Created by Natasha Maina
