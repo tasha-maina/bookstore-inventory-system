@@ -16,7 +16,7 @@ from models.book import Book
 from models.customer import Customer
 from models.sales import Sale
 from sqlalchemy import select
-
+from datetime import datetime
 # ---------------------- AUTHOR FUNCTIONS ---------------------- #
 def add_author():
     """Add a new author to the database."""
@@ -172,8 +172,10 @@ def delete_customer():
     print(f"✅ Customer '{customer.name}' deleted successfully!\n")
 
 # ---------------------- SALES FUNCTIONS ---------------------- #
+from datetime import datetime
+
 def record_sale():
-    """Record a new sale and reduce book stock."""
+    """Record a new sale with quantity and reduce book stock."""
     books = session.execute(select(Book)).scalars().all()
     customers = session.execute(select(Customer)).scalars().all()
 
@@ -186,14 +188,21 @@ def record_sale():
 
     book_id = int(input("Enter book ID: ").strip())
     customer_id = int(input("Enter customer ID: ").strip())
+    quantity = int(input("Enter quantity: ").strip())
 
     book = session.get(Book, book_id)
-    if not book or book.stock <= 0:
-        print("❌ Book unavailable or out of stock.\n")
+    if not book or book.stock < quantity:
+        print("❌ Book unavailable or insufficient stock.\n")
         return
 
-    sale = Sale(book_id=book_id, customer_id=customer_id)
-    book.stock -= 1
+    # Use the entered quantity and set date immediately
+    sale = Sale(
+        book_id=book_id, 
+        customer_id=customer_id, 
+        quantity=quantity,
+        date=datetime.now()  # set date immediately
+    )
+    book.stock -= quantity
     session.add(sale)
     session.commit()
     print(f"✅ Sale recorded successfully!\n")
@@ -208,23 +217,28 @@ def view_sales():
     for s in sales:
         book = session.get(Book, s.book_id)
         customer = session.get(Customer, s.customer_id)
-        print(f"{s.id}: {customer.name} bought '{book.title}' on {s.date}")
+        print(f"{s.id}: {customer.name} bought '{book.title}' (Qty: {s.quantity}) on {s.date}")
     print()
 
+
 def delete_sale():
-    """Delete a sale."""
+    """Delete a sale and restore book stock based on quantity."""
     view_sales()
     sale_id = int(input("Enter the ID of the sale to delete: ").strip())
     sale = session.get(Sale, sale_id)
     if not sale:
         print("❌ Sale not found.\n")
         return
-    # Restore stock
+
+    # Restore stock based on the quantity sold
     book = session.get(Book, sale.book_id)
-    book.stock += 1
+    book.stock += sale.quantity
+
     session.delete(sale)
     session.commit()
-    print(f"✅ Sale ID {sale_id} deleted successfully!\n")
+    print(f"✅ Sale ID {sale_id} deleted successfully and stock restored!\n")
+
+
 
 # ---------------------- LIST FUNCTIONS ---------------------- #
 def list_books_by_author():
