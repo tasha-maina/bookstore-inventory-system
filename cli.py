@@ -1,11 +1,11 @@
 """
-CLI for Bookstore Inventory System
+CLI for Bookstore Inventory System (Full CRUD)
 
-This application allows users to:
-- Add and view authors, books, and customers
-- Record sales
+Allows users to:
+- Add, view, edit, and delete authors, books, and customers
+- Record and delete sales
 - List books by author or customer
-- Export sales and inventory reports
+- Export sales and inventory reports (placeholder)
 
 Uses SQLAlchemy ORM to interact with the database.
 """
@@ -16,238 +16,282 @@ from models.book import Book
 from models.customer import Customer
 from models.sales import Sale
 from sqlalchemy import select
-from datetime import datetime
 
-def add_author() -> None:
-    """
-    Prompt the user to add a new author.
-
-    Collects the author's name and optional nationality.
-    Saves the author to the database.
-    """
+# ---------------------- AUTHOR FUNCTIONS ---------------------- #
+def add_author():
+    """Add a new author to the database."""
     name = input("Enter author name: ").strip()
     nationality = input("Enter nationality (optional): ").strip()
-    
     author = Author(name=name, nationality=nationality)
     session.add(author)
     session.commit()
-    
-    print(f"✅ Author added successfully! ID: {author.id}\n")
+    print(f"✅ Author added successfully (ID: {author.id})!\n")
 
+def view_authors():
+    """List all authors in the system."""
+    authors = session.execute(select(Author)).scalars().all()
+    if not authors:
+        print("No authors found.\n")
+        return
+    print("\nAuthors:")
+    for a in authors:
+        print(f"{a.id}: {a.name} ({a.nationality or 'N/A'})")
+    print()
 
-def add_book() -> None:
-    """
-    Prompt the user to add a new book.
+def update_author():
+    """Edit an existing author's name or nationality."""
+    view_authors()
+    author_id = int(input("Enter the ID of the author to edit: ").strip())
+    author = session.get(Author, author_id)
+    if not author:
+        print("❌ Author not found.\n")
+        return
+    new_name = input(f"New name [{author.name}]: ").strip() or author.name
+    new_nationality = input(f"New nationality [{author.nationality or 'N/A'}]: ").strip() or author.nationality
+    author.name = new_name
+    author.nationality = new_nationality
+    session.commit()
+    print(f"✅ Author '{author.name}' updated successfully!\n")
 
-    Collects title, price, stock quantity, and author selection.
-    Saves the book to the database and links it to the chosen author.
-    """
+def delete_author():
+    """Remove an author from the database."""
+    view_authors()
+    author_id = int(input("Enter the ID of the author to delete: ").strip())
+    author = session.get(Author, author_id)
+    if not author:
+        print("❌ Author not found.\n")
+        return
+    session.delete(author)
+    session.commit()
+    print(f"✅ Author '{author.name}' deleted successfully!\n")
+
+# ---------------------- BOOK FUNCTIONS ---------------------- #
+def add_book():
+    """Add a new book to the database and link it to an author."""
     title = input("Enter book title: ").strip()
+    price = float(input("Enter price (Ksh): ").strip())
+    stock = int(input("Enter stock quantity: ").strip())
     
-    # Validate price input
-    while True:
-        try:
-            price = float(input("Enter price (Ksh): ").strip())
-            break
-        except ValueError:
-            print("❌ Please enter a valid number for the price.")
-    
-    # Validate stock input
-    while True:
-        try:
-            stock = int(input("Enter stock quantity: ").strip())
-            break
-        except ValueError:
-            print("❌ Please enter a valid number for stock.")
-
-    # Display authors for selection
     authors = session.execute(select(Author)).scalars().all()
     print("\nAvailable authors:")
     for a in authors:
         print(f"{a.id}: {a.name}")
+    author_id = int(input("Enter author ID: ").strip())
     
-    while True:
-        try:
-            author_id = int(input("Enter author ID: ").strip())
-            if any(a.id == author_id for a in authors):
-                break
-            else:
-                print("❌ Author ID not found. Try again.")
-        except ValueError:
-            print("❌ Please enter a valid number.")
-
     book = Book(title=title, price=price, stock=stock, author_id=author_id)
     session.add(book)
     session.commit()
     print(f"✅ Book '{title}' added successfully!\n")
 
+def view_books():
+    """List all books in the system."""
+    books = session.execute(select(Book)).scalars().all()
+    if not books:
+        print("No books found.\n")
+        return
+    print("\nBooks:")
+    for b in books:
+        print(f"{b.id}: {b.title} | Price: {b.price} | Stock: {b.stock} | Author ID: {b.author_id}")
+    print()
 
-def add_customer() -> None:
-    """
-    Prompt the user to add a new customer.
+def update_book():
+    """Edit an existing book's details."""
+    view_books()
+    book_id = int(input("Enter the ID of the book to edit: ").strip())
+    book = session.get(Book, book_id)
+    if not book:
+        print("❌ Book not found.\n")
+        return
+    new_title = input(f"New title [{book.title}]: ").strip() or book.title
+    new_price = input(f"New price [{book.price}]: ").strip()
+    new_stock = input(f"New stock [{book.stock}]: ").strip()
+    book.title = new_title
+    if new_price: book.price = float(new_price)
+    if new_stock: book.stock = int(new_stock)
+    session.commit()
+    print(f"✅ Book '{book.title}' updated successfully!\n")
 
-    Collects customer name and optional email.
-    Saves the customer to the database.
-    """
+def delete_book():
+    """Remove a book from the database."""
+    view_books()
+    book_id = int(input("Enter the ID of the book to delete: ").strip())
+    book = session.get(Book, book_id)
+    if not book:
+        print("❌ Book not found.\n")
+        return
+    session.delete(book)
+    session.commit()
+    print(f"✅ Book '{book.title}' deleted successfully!\n")
+
+# ---------------------- CUSTOMER FUNCTIONS ---------------------- #
+def add_customer():
+    """Add a new customer."""
     name = input("Enter customer name: ").strip()
     email = input("Enter email (optional): ").strip()
-    
     customer = Customer(name=name, email=email)
     session.add(customer)
     session.commit()
-    
     print(f"✅ Customer '{name}' added successfully!\n")
 
+def view_customers():
+    """List all customers."""
+    customers = session.execute(select(Customer)).scalars().all()
+    if not customers:
+        print("No customers found.\n")
+        return
+    print("\nCustomers:")
+    for c in customers:
+        print(f"{c.id}: {c.name} ({c.email or 'N/A'})")
+    print()
 
-def record_sale() -> None:
-    """
-    Record a sale in the system.
+def update_customer():
+    """Edit an existing customer."""
+    view_customers()
+    customer_id = int(input("Enter the ID of the customer to edit: ").strip())
+    customer = session.get(Customer, customer_id)
+    if not customer:
+        print("❌ Customer not found.\n")
+        return
+    new_name = input(f"New name [{customer.name}]: ").strip() or customer.name
+    new_email = input(f"New email [{customer.email or 'N/A'}]: ").strip() or customer.email
+    customer.name = new_name
+    customer.email = new_email
+    session.commit()
+    print(f"✅ Customer '{customer.name}' updated successfully!\n")
 
-    Displays available books and customers.
-    Reduces book stock by 1 when a sale is recorded.
-    Saves the sale to the database.
-    """
+def delete_customer():
+    """Remove a customer from the database."""
+    view_customers()
+    customer_id = int(input("Enter the ID of the customer to delete: ").strip())
+    customer = session.get(Customer, customer_id)
+    if not customer:
+        print("❌ Customer not found.\n")
+        return
+    session.delete(customer)
+    session.commit()
+    print(f"✅ Customer '{customer.name}' deleted successfully!\n")
+
+# ---------------------- SALES FUNCTIONS ---------------------- #
+def record_sale():
+    """Record a new sale and reduce book stock."""
     books = session.execute(select(Book)).scalars().all()
     customers = session.execute(select(Customer)).scalars().all()
-
-    if not books:
-        print("❌ No books available.\n")
-        return
-    if not customers:
-        print("❌ No customers available.\n")
-        return
 
     print("\nAvailable Books:")
     for b in books:
         print(f"{b.id}: {b.title} (Stock: {b.stock})")
-
     print("\nAvailable Customers:")
     for c in customers:
         print(f"{c.id}: {c.name}")
 
-    while True:
-        try:
-            book_id = int(input("Enter book ID: ").strip())
-            book = session.get(Book, book_id)
-            if book and book.stock > 0:
-                break
-            else:
-                print("❌ Book unavailable or out of stock. Choose another.")
-        except ValueError:
-            print("❌ Please enter a valid number.")
+    book_id = int(input("Enter book ID: ").strip())
+    customer_id = int(input("Enter customer ID: ").strip())
 
-    while True:
-        try:
-            customer_id = int(input("Enter customer ID: ").strip())
-            customer = session.get(Customer, customer_id)
-            if customer:
-                break
-            else:
-                print("❌ Customer ID not found.")
-        except ValueError:
-            print("❌ Please enter a valid number.")
+    book = session.get(Book, book_id)
+    if not book or book.stock <= 0:
+        print("❌ Book unavailable or out of stock.\n")
+        return
 
-    sale = Sale(book_id=book_id, customer_id=customer_id, quantity=1)
+    sale = Sale(book_id=book_id, customer_id=customer_id)
     book.stock -= 1
     session.add(sale)
     session.commit()
+    print(f"✅ Sale recorded successfully!\n")
 
-    print(f"✅ Sale recorded: 1 x '{book.title}' sold to {customer.name}!\n")
+def view_sales():
+    """List all sales."""
+    sales = session.execute(select(Sale)).scalars().all()
+    if not sales:
+        print("No sales found.\n")
+        return
+    print("\nSales:")
+    for s in sales:
+        book = session.get(Book, s.book_id)
+        customer = session.get(Customer, s.customer_id)
+        print(f"{s.id}: {customer.name} bought '{book.title}' on {s.date}")
+    print()
 
+def delete_sale():
+    """Delete a sale."""
+    view_sales()
+    sale_id = int(input("Enter the ID of the sale to delete: ").strip())
+    sale = session.get(Sale, sale_id)
+    if not sale:
+        print("❌ Sale not found.\n")
+        return
+    # Restore stock
+    book = session.get(Book, sale.book_id)
+    book.stock += 1
+    session.delete(sale)
+    session.commit()
+    print(f"✅ Sale ID {sale_id} deleted successfully!\n")
 
-def list_books_by_author() -> None:
-    """
-    List all books by a specific author.
-
-    Prompts for author ID and fetches associated books.
-    Displays book title and stock.
-    """
-    while True:
-        try:
-            author_id = int(input("Enter author ID: ").strip())
-            break
-        except ValueError:
-            print("❌ Please enter a valid number.")
-
+# ---------------------- LIST FUNCTIONS ---------------------- #
+def list_books_by_author():
+    author_id = int(input("Enter author ID: ").strip())
     books = session.execute(select(Book).filter_by(author_id=author_id)).scalars().all()
     if not books:
         print("No books found for this author.\n")
         return
-
     print("\nBooks by this author:")
     for book in books:
         print(f"- {book.title} ({book.stock} in stock)")
     print()
 
-
-def list_books_by_customer() -> None:
-    """
-    List all books purchased by a specific customer.
-
-    Prompts for customer ID and fetches associated sales.
-    Displays book titles for each sale.
-    """
-    while True:
-        try:
-            customer_id = int(input("Enter customer ID: ").strip())
-            break
-        except ValueError:
-            print("❌ Please enter a valid number.")
-
+def list_books_by_customer():
+    customer_id = int(input("Enter customer ID: ").strip())
     sales = session.execute(select(Sale).filter_by(customer_id=customer_id)).scalars().all()
     if not sales:
         print("No books found for this customer.\n")
         return
-
     print("\nBooks bought by this customer:")
     for sale in sales:
         book = session.get(Book, sale.book_id)
         print(f"- {book.title}")
     print()
 
-
-def main() -> None:
-    """
-    Main CLI loop.
-
-    Displays the menu and executes functions based on user selection.
-    Loops until user exits.
-    """
+# ---------------------- MAIN CLI ---------------------- #
+def main():
+    """Main CLI loop."""
     while True:
         print("""
 📚 BOOKSTORE INVENTORY SYSTEM 📚
-1. Add new author
-2. Add new book
-3. Add new customer
-4. Record a sale
-5. List all books by author
-6. List all books bought by customer
-7. Export sales report
-8. Export inventory report
-9. Exit
+1. Add Author
+2. View Authors
+3. Edit Author
+4. Delete Author
+5. Add Book
+6. View Books
+7. Edit Book
+8. Delete Book
+9. Add Customer
+10. View Customers
+11. Edit Customer
+12. Delete Customer
+13. Record Sale
+14. View Sales
+15. Delete Sale
+16. List Books by Author
+17. List Books by Customer
+18. Exit
 """)
-        choice = input("Select an option (1–9): ").strip()
+        choice = input("Select an option (1–18): ").strip()
 
-        if choice == "1":
-            add_author()
-        elif choice == "2":
-            add_book()
-        elif choice == "3":
-            add_customer()
-        elif choice == "4":
-            record_sale()
-        elif choice == "5":
-            list_books_by_author()
-        elif choice == "6":
-            list_books_by_customer()
-        elif choice in ["7", "8"]:
-            print("⚠️ Report exporting not implemented yet.\n")
-        elif choice == "9":
+        menu = {
+            "1": add_author, "2": view_authors, "3": update_author, "4": delete_author,
+            "5": add_book, "6": view_books, "7": update_book, "8": delete_book,
+            "9": add_customer, "10": view_customers, "11": update_customer, "12": delete_customer,
+            "13": record_sale, "14": view_sales, "15": delete_sale,
+            "16": list_books_by_author, "17": list_books_by_customer
+        }
+
+        if choice in menu:
+            menu[choice]()
+        elif choice == "18":
             print("👋 Goodbye!")
             break
         else:
-            print("❌ Invalid choice. Please try again.\n")
-
+            print("❌ Invalid choice. Try again.\n")
 
 if __name__ == "__main__":
     main()
