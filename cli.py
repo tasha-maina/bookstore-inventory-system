@@ -220,6 +220,74 @@ def view_sales():
         print(f"{s.id}: {customer.name} bought '{book.title}' (Qty: {s.quantity}) on {s.date}")
     print()
 
+def update_sale():
+    """Edit an existing sale and adjust book stock."""
+    view_sales()  # show all sales
+    sale_id = int(input("Enter the ID of the sale to edit: ").strip())
+    sale = session.get(Sale, sale_id)
+    if not sale:
+        print("❌ Sale not found.\n")
+        return
+
+    # Current values
+    book = session.get(Book, sale.book_id)
+    customer = session.get(Customer, sale.customer_id)
+    print(f"Current Sale: {customer.name} bought '{book.title}' (Qty: {sale.quantity})")
+
+    # New book selection (optional)
+    view_books()
+    new_book_id = input(f"New book ID [{book.id}]: ").strip()
+    if new_book_id:
+        new_book_id = int(new_book_id)
+        new_book = session.get(Book, new_book_id)
+        if not new_book:
+            print("❌ Book not found. Keeping original book.")
+            new_book_id = book.id
+        else:
+            new_book = session.get(Book, new_book_id)
+    else:
+        new_book_id = book.id
+        new_book = book
+
+    # New customer selection (optional)
+    view_customers()
+    new_customer_id = input(f"New customer ID [{customer.id}]: ").strip()
+    if new_customer_id:
+        new_customer_id = int(new_customer_id)
+        if not session.get(Customer, new_customer_id):
+            print("❌ Customer not found. Keeping original customer.")
+            new_customer_id = customer.id
+    else:
+        new_customer_id = customer.id
+
+    # New quantity
+    new_quantity = input(f"New quantity [{sale.quantity}]: ").strip()
+    if new_quantity:
+        new_quantity = int(new_quantity)
+        quantity_diff = new_quantity - sale.quantity
+        if new_book.stock < quantity_diff:
+            print("❌ Not enough stock to increase quantity. Keeping original quantity.")
+            new_quantity = sale.quantity
+            quantity_diff = 0
+    else:
+        new_quantity = sale.quantity
+        quantity_diff = 0
+
+    # Adjust stock
+    new_book.stock -= quantity_diff
+    if new_book_id != sale.book_id:
+        # If book changed, restore stock to old book
+        book.stock += sale.quantity
+
+    # Apply changes
+    sale.book_id = new_book_id
+    sale.customer_id = new_customer_id
+    sale.quantity = new_quantity
+
+    session.commit()
+    print(f"✅ Sale ID {sale_id} updated successfully!\n")
+
+
 
 def delete_sale():
     """Delete a sale and restore book stock based on quantity."""
@@ -284,24 +352,26 @@ def main():
 12. Delete Customer
 13. Record Sale
 14. View Sales
-15. Delete Sale
-16. List Books by Author
-17. List Books by Customer
-18. Exit
+15. Edit Sales
+16. Delete Sale
+17. List Books by Author
+18. List Books by Customer
+19. Exit
 """)
-        choice = input("Select an option (1–18): ").strip()
+        choice = input("Select an option (1–19): ").strip()
 
         menu = {
-            "1": add_author, "2": view_authors, "3": update_author, "4": delete_author,
-            "5": add_book, "6": view_books, "7": update_book, "8": delete_book,
-            "9": add_customer, "10": view_customers, "11": update_customer, "12": delete_customer,
-            "13": record_sale, "14": view_sales, "15": delete_sale,
-            "16": list_books_by_author, "17": list_books_by_customer
-        }
+    "1": add_author, "2": view_authors, "3": update_author, "4": delete_author,
+    "5": add_book, "6": view_books, "7": update_book, "8": delete_book,
+    "9": add_customer, "10": view_customers, "11": update_customer, "12": delete_customer,
+    "13": record_sale, "14": view_sales, "15": update_sale, "16": delete_sale,
+    "17": list_books_by_author, "18": list_books_by_customer
+}
+
 
         if choice in menu:
             menu[choice]()
-        elif choice == "18":
+        elif choice == "19":
             print("👋 Goodbye!")
             break
         else:
