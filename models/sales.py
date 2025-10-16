@@ -8,6 +8,7 @@ class Sale(Base):
     id = Column(Integer, primary_key=True)
     book_id = Column(Integer, ForeignKey("books.id"))
     customer_id = Column(Integer, ForeignKey("customers.id"))
+    quantity = Column(Integer, nullable=False)
     date = Column(DateTime, server_default=func.now())
 
     # Relationships
