@@ -79,16 +79,26 @@ Export CSV → Generates sales_report_YYYYMMDD.csv
 Check your Beekeeper → All tables populated 🎉
 
 📊 Example CLI Output
-=== Bookstore Inventory System ===
+📚 BOOKSTORE INVENTORY SYSTEM 📚
 1. Add Author
-2. Add Book
-3. Add Customer
-4. Record Sale
-5. List Books by Author
-6. List Books by Customer
-7. Export Sales CSV
-8. Show Total Sales per Author
-9. Exit
+2. View Authors
+3. Edit Author
+4. Delete Author
+5. Add Book
+6. View Books
+7. Edit Book
+8. Delete Book
+9. Add Customer
+10. View Customers
+11. Edit Customer
+12. Delete Customer
+13. Record Sale
+14. View Sales
+15. Edit Sale
+16. Delete Sale
+17. List Books by Author
+18. List Books by Customer
+19. Exit
 
 👩‍💻 Author
 
